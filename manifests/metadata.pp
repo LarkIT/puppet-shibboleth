@@ -12,7 +12,7 @@ define shibboleth::metadata(
   $metadata_filter_max_validity_interval  = '2419200'
 ){
 
-  $backing_file_name_r = collect($backing_file_name, inline_template("<%= @provider_uri.split('/').last  %>"))
+  $backing_file_name_r = pick($backing_file_name, inline_template("<%= @provider_uri.split('/').last  %>"))
   $backing_file = "${backing_file_dir}/${backing_file_name_r}"
 
   if $cert_uri {
