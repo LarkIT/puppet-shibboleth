@@ -4,7 +4,7 @@ define shibboleth::metadata(
   $provider_uri,
   $cert_uri                 = undef,
   $backing_file_dir         = $::shibboleth::conf_dir,
-  $backing_file_name        = inline_template("<%= @provider_uri.split('/').last  %>"),
+  $backing_file_name        = undef,
   $cert_dir                 = $::shibboleth::conf_dir,
   $cert_file_name           = undef,
   $provider_type            = 'XML',
@@ -12,7 +12,8 @@ define shibboleth::metadata(
   $metadata_filter_max_validity_interval  = '2419200'
 ){
 
-  $backing_file = "${backing_file_dir}/${backing_file_name}"
+  $backing_file_name_r = collect($backing_file_name, inline_template("<%= @provider_uri.split('/').last  %>"))
+  $backing_file = "${backing_file_dir}/${backing_file_name_r}"
 
   if $cert_uri {
     # Get the Metadata signing certificate
