@@ -16,6 +16,7 @@ define shibboleth::metadata(
   $cert_file    = "${cert_dir}/${cert_file_name}"
 
   # Get the Metadata signing certificate
+  notify(${cert_file_name})
   exec{"get_${name}_metadata_cert":
     path    => ['/usr/bin'],
     command => "wget ${cert_uri} -O ${cert_file}",
