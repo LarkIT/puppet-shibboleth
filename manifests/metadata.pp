@@ -5,19 +5,19 @@ define shibboleth::metadata(
   $cert_uri,
   $backing_file_dir         = $::shibboleth::conf_dir,
   #  $backing_file_name        = inline_template("<%= @provider_uri.split('/').last  %>"),
+  $backing_file_name        = split($provider_uri, '/'),
   $cert_dir                 = $::shibboleth::conf_dir,
-  $cert_file_name           = inline_template("<%= @cert_uri.split('/').last  %>"),
+  #  $cert_file_name           = inline_template("<%= @cert_uri.split('/').last  %>"),
+  $cert_file_name        = split($cert_uri, '/'),
   $provider_type            = 'XML',
   $provider_reload_interval = '7200',
   $metadata_filter_max_validity_interval  = '2419200'
 ){
 
-  $backing_file = "${backing_file_dir}/${backing_file_name}"
-  $cert_file    = "${cert_dir}/${cert_file_name}"
+  $backing_file = "${backing_file_dir}/${backing_file_name[-1]}"
+  $cert_file    = "${cert_dir}/${cert_file_name[-1]}"
 
   # Get the Metadata signing certificate
-  notify { "${cert_file_name}": } 
-  
   exec{"get_${name}_metadata_cert":
     path    => ['/usr/bin'],
     command => "wget ${cert_uri} -O ${cert_file}",
