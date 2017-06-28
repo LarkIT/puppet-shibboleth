@@ -17,6 +17,12 @@ define shibboleth::metadata(
   $backing_file = "${backing_file_dir}/${backing_file_name[-1]}"
   $cert_file    = "${cert_dir}/${cert_file_name[-1]}"
 
+  notify { "1 ${provider_uri}": }
+  notify { "2 ${backing_file_name}": }
+  notify { "3 ${backing_file}": }
+  notify { "4 ${cert_file_name}": }
+  notify { "5 ${cert_file}": }
+
   # Get the Metadata signing certificate
   exec{"get_${name}_metadata_cert":
     path    => ['/usr/bin'],
