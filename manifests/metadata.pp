@@ -66,6 +66,7 @@ define shibboleth::metadata(
       "set MetadataProvider/#attribute/uri ${provider_uri}",
       "set MetadataProvider/#attribute/backingFilePath ${backing_file}",
       "set MetadataProvider/#attribute/reloadInterval ${provider_reload_interval}",
+      'set MetadataProvider/MetadataFilter[1]/#attribute/type RequireValidUntil',
       $aug_valid_until,
       $aug_signature,
     ]),
