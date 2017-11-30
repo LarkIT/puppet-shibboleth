@@ -73,4 +73,16 @@ define shibboleth::metadata(
     require => [Augeas["shib_${name}_create_metadata_provider"]],
   }
 
+  augeas{"shib_${name}_metadata_provider_transport_option":
+    lens    => 'Xml.lns',
+    incl    => $::shibboleth::config_file,
+    context => "/files${::shibboleth::config_file}/SPConfig/ApplicationDefaults/MetadataProvider",
+    changes => [
+      "set TransportOption/#attribute/type ${provider_type}",
+      "set TransportOption/#attribute/uri ${provider_uri}",
+    ],
+    notify  => Service['httpd','shibd'],
+    require => [Exec["get_${name}_metadata_cert"],Augeas["shib_${name}_create_metadata_provider"]],
+  }
+
 }
