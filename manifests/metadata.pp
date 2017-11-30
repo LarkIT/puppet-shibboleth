@@ -9,7 +9,7 @@ define shibboleth::metadata(
   $cert_file_name           = undef,
   $provider_type            = 'XML',
   $provider_reload_interval = '7200',
-  $metadata_filter_max_validity_interval  = '2419200'
+  $metadata_filter_max_validity_interval  = 2419200
 ){
 
   $backing_file_name_r = pick($backing_file_name, inline_template("<%= @provider_uri.split('/').last  %>"))
@@ -56,7 +56,6 @@ define shibboleth::metadata(
     notify  => Service['httpd','shibd'],
   }
 
-  notify{"Nick: $aug_valid_until":}
   # This will update the attributes and child nodes if they change
   augeas{"shib_${name}_metadata_provider":
     lens    => 'Xml.lns',
