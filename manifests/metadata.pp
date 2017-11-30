@@ -56,6 +56,7 @@ define shibboleth::metadata(
     notify  => Service['httpd','shibd'],
   }
 
+  notify{"Nick: $aug_valid_until":}
   # This will update the attributes and child nodes if they change
   augeas{"shib_${name}_metadata_provider":
     lens    => 'Xml.lns',
