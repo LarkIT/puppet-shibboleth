@@ -79,8 +79,9 @@ define shibboleth::metadata(
     incl    => $::shibboleth::config_file,
     context => "/files${::shibboleth::config_file}/SPConfig/ApplicationDefaults/MetadataProvider",
     changes => [
-      "set TransportOption/#attribute/type ${provider_type}",
-      "set TransportOption/#attribute/uri ${provider_uri}",
+      "set TransportOption/#attribute/provider CURL",
+      "set TransportOption/#attribute/option 10004",
+      "set TransportOption mbi-proxy-01.utmb.lan:3128",
     ],
     notify  => Service['httpd','shibd'],
     require => Augeas["shib_${name}_metadata_provider"],
