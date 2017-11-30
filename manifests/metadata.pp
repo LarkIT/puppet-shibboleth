@@ -83,7 +83,7 @@ define shibboleth::metadata(
       "set TransportOption/#attribute/uri ${provider_uri}",
     ],
     notify  => Service['httpd','shibd'],
-    require => [Exec["get_${name}_metadata_cert"],Augeas["shib_${name}_create_metadata_provider"]],
+    require =>  [Augeas["shib_${name}_metadata_provider"],
   }
 
 }
