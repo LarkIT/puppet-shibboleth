@@ -81,7 +81,7 @@ define shibboleth::metadata(
     changes => [
       "set TransportOption/#attribute/provider CURL",
       "set TransportOption/#attribute/option 10004",
-      "set TransportOption mbi-proxy-01.utmb.lan:3128",
+      "set mbi-proxy-01.utmb.lan:3128",
     ],
     notify  => Service['httpd','shibd'],
     require => Augeas["shib_${name}_metadata_provider"],
