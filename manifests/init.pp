@@ -16,6 +16,7 @@ class shibboleth (
   $admin              = $::shibboleth::params::admin,
   $hostname           = $::shibboleth::params::hostname,
   $user               = $::shibboleth::params::user,
+  $user_home          = $::shibboleth::params::user_home,
   $group              = $::shibboleth::params::group,
   $logo_location      = $::shibboleth::params::logo_location,
   $style_sheet        = $::shibboleth::params::style_sheet,
@@ -31,7 +32,7 @@ class shibboleth (
 
   user{$user:
     ensure  => 'present',
-    home    => '/var/log/shibboleth',
+    home    => $user_home,
     shell   => '/bin/false',
     require => Class['apache::mod::shib'],
   }
@@ -65,6 +66,7 @@ class shibboleth (
       "set Errors/#attribute/styleSheet ${style_sheet}",
     ],
     notify  => Service['httpd','shibd'],
+    require => File['shibboleth_config_file'],
   }
 
   augeas{'sp_config_consistent_address':
@@ -75,6 +77,7 @@ class shibboleth (
       "set Sessions/#attribute/consistentAddress ${consistent_address}",
     ],
     notify  => Service['httpd','shibd'],
+    require => File['shibboleth_config_file'],
   }
 
   augeas{'sp_config_hostname':
@@ -83,9 +86,16 @@ class shibboleth (
     context => "/files${config_file}/SPConfig/ApplicationDefaults",
     changes => [
       "set #attribute/entityID https://${hostname}/shibboleth",
-      "set Sessions/#attribute/handlerURL https://${hostname}/Shibboleth.sso",
+#      "set Sessions/#attribute/handlerURL https://${hostname}/Shibboleth.sso",
+      "set Sessions/#attribute/handlerURL /Shibboleth.sso",
     ],
     notify  => Service['httpd','shibd'],
+    require => File['shibboleth_config_file'],
+  }
+
+  $cookieProps = $handlerSSL ? {
+    true      => 'https',
+    default   => 'http',
   }
 
   augeas{'sp_config_handlerSSL':
@@ -94,8 +104,10 @@ class shibboleth (
     context => "/files${config_file}/SPConfig/ApplicationDefaults",
     changes => [
       "set Sessions/#attribute/handlerSSL ${handlerSSL}",
+      "set Sessions/#attribute/cookieProps ${cookieProps}",
     ],
     notify  => Service['httpd','shibd'],
+    require => File['shibboleth_config_file'],
   }
 
   service{'shibd':
@@ -103,7 +115,8 @@ class shibboleth (
     enable     => true,
     hasrestart => true,
     hasstatus  => true,
-    require    => [Class['apache::mod::shib'],User[$user]],
+    require    => [Class['apache::mod::shib'],User[$user],
+    File['shibboleth_config_file']],
   }
 
 }

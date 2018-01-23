@@ -12,7 +12,7 @@ class shibboleth::backend_cert(
 
   exec{"shib_keygen_${sp_hostname}":
     path    => [$::shibboleth::bin_dir,'/usr/bin','/bin'],
-    command => "shib-keygen -f -h ${sp_hostname} -e https://${sp_hostname}/shibbloeth",
+    command => "shib-keygen -f -h ${sp_hostname} -e https://${sp_hostname}/shibboleth",
     unless  => "openssl x509 -noout -in ${sp_cert_file} -issuer|grep ${sp_hostname}",
   }
 }
