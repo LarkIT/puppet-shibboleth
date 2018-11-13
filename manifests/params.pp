@@ -28,10 +28,12 @@ class shibboleth::params {
     'Debian':{
       $user  = '_shibd'
       $group = '_shibd'
+      $user_home = '/var/log/shibboleth'
     }
     'RedHat':{
       $user  = 'shibd'
       $group = 'shibd'
+      $user_home = '/var/run/shibboleth'
     }
     default:{
       fail("The shibboleth Puppet module does not support ${::osfamily} family of operating systems")

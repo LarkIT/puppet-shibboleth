@@ -2,7 +2,7 @@
 # it will need to be modified to permit multiple metadata providers
 define shibboleth::metadata(
   $provider_uri,
-  $cert_uri,
+  $cert_uri                 = undef,
   $backing_file_dir         = $::shibboleth::conf_dir,
   #  $backing_file_name        = inline_template("<%= @provider_uri.split('/').last  %>"),
   $backing_file_name        = split($provider_uri, '/'),
@@ -11,7 +11,7 @@ define shibboleth::metadata(
   $cert_file_name        = split($cert_uri, '/'),
   $provider_type            = 'XML',
   $provider_reload_interval = '7200',
-  $metadata_filter_max_validity_interval  = '2419200'
+  $metadata_filter_max_validity_interval  = 2419200
 ){
 
   $backing_file = "${backing_file_dir}/${backing_file_name[-1]}"
@@ -23,12 +23,33 @@ define shibboleth::metadata(
   notify { "4 ${cert_file_name}": }
   notify { "5 ${cert_file}": }
 
-  # Get the Metadata signing certificate
-  exec{"get_${name}_metadata_cert":
-    path    => ['/usr/bin'],
-    command => "wget ${cert_uri} -O ${cert_file}",
-    creates => $cert_file,
-    notify  => Service['httpd','shibd'],
+  if $cert_uri {
+    # Get the Metadata signing certificate
+    exec{"get_${name}_metadata_cert":
+      path    => ['/usr/bin'],
+      command => "wget ${cert_uri} -O ${cert_file}",
+      creates => $cert_file,
+      notify  => Service['httpd','shibd'],
+      before  => Augeas["shib_${name}_create_metadata_provider"]
+    }
+
+    $_cert_file_name = pick($cert_filename, inline_template("<%= @cert_uri.split('/').last  %>"))
+    $cert_file    = "${cert_dir}/${_cert_file_name}"
+    $aug_signature = [
+      'set MetadataProvider/MetadataFilter[2]/#attribute/type Signature',
+      "set MetadataProvider/MetadataFilter[2]/#attribute/certificate ${cert_file}",
+    ]
+  } else {
+    $aug_signature = 'rm MetadataProvider/MetadataFilter[2]/#attribute/type Signature'
+  }
+
+  if $metadata_filter_max_validity_interval > 0 {
+    $aug_valid_until = [
+      'set MetadataProvider/MetadataFilter[1]/#attribute/type RequireValidUntil',
+      "set MetadataProvider/MetadataFilter[1]/#attribute/maxValidityInterval ${metadata_filter_max_validity_interval}",
+    ]
+  } else {
+    $aug_valid_until = 'rm MetadataProvider/MetadataFilter'
   }
 
   # This puts the MetadataProvider entry in the 'right' place
@@ -41,7 +62,6 @@ define shibboleth::metadata(
     ],
     onlyif  => 'match MetadataProvider/#attribute/uri size == 0',
     notify  => Service['httpd','shibd'],
-    require => Exec["get_${name}_metadata_cert"],
   }
 
   # This will update the attributes and child nodes if they change
@@ -49,17 +69,28 @@ define shibboleth::metadata(
     lens    => 'Xml.lns',
     incl    => $::shibboleth::config_file,
     context => "/files${::shibboleth::config_file}/SPConfig/ApplicationDefaults",
-    changes => [
+    changes => flatten([
       "set MetadataProvider/#attribute/type ${provider_type}",
       "set MetadataProvider/#attribute/uri ${provider_uri}",
       "set MetadataProvider/#attribute/backingFilePath ${backing_file}",
       "set MetadataProvider/#attribute/reloadInterval ${provider_reload_interval}",
-      'set MetadataProvider/MetadataFilter[1]/#attribute/type RequireValidUntil',
-      "set MetadataProvider/MetadataFilter[1]/#attribute/maxValidityInterval ${metadata_filter_max_validity_interval}",
-      'set MetadataProvider/MetadataFilter[2]/#attribute/type Signature',
-      "set MetadataProvider/MetadataFilter[2]/#attribute/certificate ${cert_file}",
+      $aug_valid_until,
+      $aug_signature,
+    ]),
+    notify  => Service['httpd','shibd'],
+    require => [Augeas["shib_${name}_create_metadata_provider"]],
+  }
+
+  augeas{"shib_${name}_metadata_provider_transport_option":
+    lens    => 'Xml.lns',
+    incl    => $::shibboleth::config_file,
+    context => "/files${::shibboleth::config_file}/SPConfig/ApplicationDefaults/MetadataProvider",
+    changes => [
+      "set TransportOption/#attribute/provider CURL",
+      "set TransportOption/#attribute/option 10004",
+      "set TransportOption/#text mbi-proxy-01.utmb.lan:3128",
     ],
     notify  => Service['httpd','shibd'],
-    require => [Exec["get_${name}_metadata_cert"],Augeas["shib_${name}_create_metadata_provider"]],
+    require => Augeas["shib_${name}_metadata_provider"],
   }
 }
